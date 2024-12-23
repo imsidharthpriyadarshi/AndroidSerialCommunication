@@ -15,6 +15,7 @@ import android.os.Looper;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ScrollView;
@@ -23,6 +24,7 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.LongDef;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -45,6 +47,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity implements SerialInputOutputManager.Listener {
+    private String TAG="myTag";
+
     private enum UsbPermission { Unknown, Requested, Granted, Denied }
     private Executor executors=Executors.newSingleThreadExecutor();
 
@@ -81,6 +85,8 @@ public class MainActivity extends AppCompatActivity implements SerialInputOutput
     private UsbManager usbManager;
     List<Item> listItems=new ArrayList<>();
     ScrollView scrollView;
+    Handler handler;
+    private int cnt=0;
 
 
     @Override
@@ -95,8 +101,18 @@ public class MainActivity extends AppCompatActivity implements SerialInputOutput
         btnReceive.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                send("1");
                 refresh();
 
+            }
+        });
+
+        handler=new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "run: "+cnt++);
+                handler.postDelayed(this,2000);
             }
         });
 
@@ -144,8 +160,7 @@ public class MainActivity extends AppCompatActivity implements SerialInputOutput
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (INTENT_ACTION_GRANT_USB.equals(intent.getAction())) {
-                    usbPermission = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
-                            ? UsbPermission.Granted : UsbPermission.Denied;
+                    usbPermission = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false) ? UsbPermission.Granted : UsbPermission.Denied;
                     connect();
                 }
             }
@@ -188,23 +203,23 @@ public class MainActivity extends AppCompatActivity implements SerialInputOutput
     public void onResume() {
         super.onResume();
         refresh();
-        if(!connected && (usbPermission == UsbPermission.Unknown || usbPermission == UsbPermission.Granted)) {
-            mainLooper.post(new Runnable() {
-                @Override
-                public void run() {
-                    connect();
-                    Toast.makeText(MainActivity.this, "posting", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
+//        if(!connected && (usbPermission == UsbPermission.Unknown || usbPermission == UsbPermission.Granted)) {
+//            mainLooper.post(new Runnable() {
+//                @Override
+//                public void run() {
+//                    connect();
+//                    Toast.makeText(MainActivity.this, "posting", Toast.LENGTH_SHORT).show();
+//                }
+//            });
+//        }
     }
 
     @Override
     public void onPause() {
-        if(connected) {
-            status("disconnected");
-            disconnect();
-        }
+//        if(connected) {
+//            status("disconnected");
+//            disconnect();
+//        }
         super.onPause();
     }
 
